@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <% include partials/head %>
+  </head>
+  <body>
+    <header>
+      <% include partials/header %>  
+    </header>  
+    <div class="container">
+        <ul class="nav nav-pills">
+            <li class="active"><a data-toggle="pill" href="#my_all_books">My All Books</a></li>
+            <li><a data-toggle="pill" href="#my_requests">My Requests</a></li>
+            <li><a data-toggle="pill" href="#requests_for_me">Requests for Me</a></li>
+            <li><a data-toggle="pill" href="#add_books">Add Books from Google</a></li>
+        </ul>
+        
+        <div class="tab-content">
+            <div id="my_all_books" class="tab-pane fade in active">
+                <h3>My All Books</h3>
+                <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
+            </div>
+            <div id="my_requests" class="tab-pane fade">
+                <h3>My Requests</h3>
+                <p>Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+            </div>
+            <div id="requests_for_me" class="tab-pane fade">
+                <h3>Requests for Me</h3>
+                <p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam.</p>
+            </div>
+            <div id="add_books" class="tab-pane fade">
+                <h3>Add Books from Google</h3>
+                <p>Eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo.</p>
+            </div>
+        </div>
+    </div>
+    <footer>
+        <% include partials/footer %>
+    </footer>
+  </body>
+</html>
