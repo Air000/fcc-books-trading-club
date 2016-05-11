@@ -2,11 +2,56 @@
 <html>
   <head>
     <% include partials/head %>
+    <script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.4.8/angular.min.js"></script>
   </head>
+  <script>
+    var app = angular.module('allBooksApp', []);
+    app.controller('allBooksCtrl', function($scope, $http) {
+      $scope.allBooks = <%-JSON.stringify(allBooks)%>;
+      $scope.user = <%-JSON.stringify(user)%>;
+      $scope.requestable = function(book) {
+        return ($scope.user != null && $scope.user.twitter.username != book.bookInfo.currentState.owner);
+      };
+      
+      $scope.sendRequest = function(book) {
+        $http({
+          method: 'POST',
+          url:    '/requestBook',
+          data:    book
+        }).then(function success(res) {
+          
+        }, function error(err) {
+          
+        });
+      };
+    });
+  </script>
   <body>
     <header>
       <% include partials/header %>  
-    </header>  
+    </header>
+    <div class="container" ng-app="allBooksApp" ng-controller="allBooksCtrl">
+      <table class="table table-striped">
+        <thead>
+          <tr>
+            <th>No.</th>
+            <th>Image</th>
+            <th>Title</th>
+            <th>Owner<th>
+          </tr>  
+        </thead>
+        <tbody>
+          <tr ng-repeat="book in allBooks">
+            <td>{{$index}}</td>
+            <td><img class="bookCover" ng-src="{{book.bookInfo.coverUrl}}"></img></td>
+            <td>{{book.bookInfo.bookName}}</td>
+            <td>{{book.bookInfo.currentState.owner}}</td>
+            <td>
+              <button class="btn btn-primary" ng-disabled="!requestable(book)" ng-click="sendRequest(book)">Request</button>
+            </td>
+        </tbody>  
+      </table>  
+    </div>  
     <footer>
         <% include partials/footer %>
     </footer>
