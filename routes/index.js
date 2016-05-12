@@ -27,10 +27,10 @@ module.exports = function(passport) {
         
     });
     
-    router.get('/mybooks', isLoggedIn, function(req, res) {
+    router.get('/books_manage', isLoggedIn, function(req, res) {
         Book.find({'bookInfo.currentState.owner': req.user.twitter.username}, function(err, myBooks) {
            if(err)console.log(err);
-           res.render('mybooks', {user: req.user, myBooks: myBooks});
+           res.render('books_manage', {user: req.user, myBooks: myBooks});
         });
         
     });
@@ -59,8 +59,8 @@ module.exports = function(passport) {
             console.log(response.statusCode, error);
           
           console.log(JSON.stringify(body.items[0]));
-          
-          var newBook = new Book({
+        
+          var newBook = {
             bookInfo    : {
                 volumeId    : body.items[0].id,
                 bookName    : body.items[0].volumeInfo.title,
@@ -68,22 +68,14 @@ module.exports = function(passport) {
                 firstOwner  : req.user.twitter.username,
                 addOnDate   : new Date(),
                 currentState    : {
-                    preOwner    : "Google Books API",
                     owner       : req.user.twitter.username,    // owner changed when trading approved
-                    requestBy   : null,    //username, only can request by one user at one time
-                    isOnTrading   : false,
-                    requestTimeStamp: null
-                    
-                }
-                
+                }  
             }
-          });
-          
-          console.log(JSON.stringify(newBook));
-          newBook.save(function(err) {
+          };
+          addBookFromGoogle(newBook, function(err, bookAdded) {
               if(err)console.log(err);
               
-              res.send(newBook);
+              res.send(bookAdded);
           });
            
         });
@@ -92,7 +84,18 @@ module.exports = function(passport) {
     
     router.post('/requestBook', isLoggedIn, function(req, res){
        console.log(req.body);
-       res.send("OK");
+       requestForBook(req.body, req.user, function(err, doc){
+            if(err){
+                console.log(err);
+                res.status(400);
+                res.send("request book failed!");
+            }else{
+               
+                res.send(doc);
+            }
+           
+       });
+       
     });
     // route for twitter authentication and login
     router.get('/auth/twitter', passport.authenticate('twitter'));
@@ -123,4 +126,35 @@ function isLoggedIn(req, res, next) {
     res.status(400);
     res.send("Please login for booking!");
     // res.redirect('/auth/twitter');
+}
+
+function addBookFromGoogle(book, cb) {
+    var newBook = new Book(book);
+    newBook.save(function(err, bookAdded) {
+        cb(err, bookAdded);
+    });
+}
+
+function requestForBook(book, user, cb) {
+    var newRecord = {
+        requestTimeStamp    : new Date(),
+        requestByUser       : user.twitter.username,
+        requestFromOwner    : book.bookInfo.currentState.owner,
+        state               : "pending", //pending, approved, unapproved
+        endTimeStamp        : null    //aproved or unapproved timestamp
+    };
+    
+    Book.findOneAndUpdate({_id: book._id}, {
+        $push: {tradeRecords: newRecord},
+        $set:  {
+            'bookInfo.currentState.requestBy': user.twitter.username,
+            'bookInfo.currentState.isOnTrading': true,
+            'bookInfo.currentState.requestTimeStamp': new Date()
+        }
+    }, {'new': true}, function(err, newDoc) {
+        if(err) console.log(err);
+        
+        cb(err, newDoc);
+        console.log(newDoc);
+    });
 }

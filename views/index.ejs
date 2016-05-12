@@ -2,27 +2,37 @@
 <html>
   <head>
     <% include partials/head %>
-    <script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.4.8/angular.min.js"></script>
+    <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.4.8/angular.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js"></script>
   </head>
   <script>
     var app = angular.module('allBooksApp', []);
     app.controller('allBooksCtrl', function($scope, $http) {
       $scope.allBooks = <%-JSON.stringify(allBooks)%>;
       $scope.user = <%-JSON.stringify(user)%>;
-      $scope.requestable = function(book) {
-        return ($scope.user != null && $scope.user.twitter.username != book.bookInfo.currentState.owner);
+      $scope.requestable = function(bookInfo) {
+        return ($scope.user != null && 
+                $scope.user.twitter.username != bookInfo.currentState.owner &&
+                bookInfo.currentState.isOnTrading == false);
       };
       
       $scope.sendRequest = function(book) {
+        $("#wait").show();
         $http({
           method: 'POST',
           url:    '/requestBook',
           data:    book
         }).then(function success(res) {
-          
+          var bookWithNewStatus = res.data;
+          _.extend( _.findWhere($scope.allBooks, { _id: bookWithNewStatus._id }), bookWithNewStatus);
+         
+          // console.log($scope.allBooks);
         }, function error(err) {
-          
+          alert(err.responseText);
+        }).finally(function() {
+          $("#wait").hide();
         });
+        
       };
     });
   </script>
@@ -47,7 +57,9 @@
             <td>{{book.bookInfo.bookName}}</td>
             <td>{{book.bookInfo.currentState.owner}}</td>
             <td>
-              <button class="btn btn-primary" ng-disabled="!requestable(book)" ng-click="sendRequest(book)">Request</button>
+              <button class="btn" ng-class="{'btn-primary': !book.bookInfo.currentState.isOnTrading, 'btn-warning': book.bookInfo.currentState.isOnTrading}" ng-disabled="!requestable(book.bookInfo)" ng-click="sendRequest(book)">
+                {{book.bookInfo.currentState.isOnTrading?book.tradeRecords[book.tradeRecords.length - 1].state:"request"}}
+              </button>
             </td>
         </tbody>  
       </table>  
@@ -55,5 +67,6 @@
     <footer>
         <% include partials/footer %>
     </footer>
+    <div id="wait" style="display:none;width:69px;height:89px;position:absolute;top:50%;left:50%;padding:2px;"><img src='images/loading.gif' width="64" height="64" /></div>
   </body>
 </html>

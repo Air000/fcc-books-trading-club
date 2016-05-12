@@ -6,9 +6,9 @@
  
   </head>
   <script>
-    var app = angular.module('myBooksApp', []);
+    var app = angular.module('bookManageApp', []);
 
-    app.controller('myBooksCtrl', function($scope) {
+    app.controller('bookManageCtrl', function($scope) {
         $scope.myBooks = <%-JSON.stringify(myBooks)%>;
     });
 
@@ -51,7 +51,7 @@
     <header>
       <% include partials/header %>  
     </header>  
-    <div class="container">
+    <div class="container"  ng-app="bookManageApp" ng-controller="bookManageCtrl">
         <ul class="nav nav-pills">
             <li class="active"><a data-toggle="pill" href="#my_all_books">My All Books</a></li>
             <li><a data-toggle="pill" href="#my_requests">My Requests</a></li>
@@ -59,7 +59,7 @@
         </ul>
         
         <div class="tab-content">
-            <div id="my_all_books" class="tab-pane fade in active" ng-app="myBooksApp" ng-controller="myBooksCtrl">
+            <div id="my_all_books" class="tab-pane fade in active">
                 <form class="searchbox" id="searchForm" action="/addbook" method="post">
                     <input type="search" placeholder="Search Book by Name or Author" name="bookQuery" required />
                     <button type="submit" value="search">&nbsp;<i class="fa fa-plus fa-2x" aria-hidden="true"></i></button>
@@ -93,12 +93,7 @@
                 <h3>Requests for Me</h3>
                 <p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam.</p>
             </div>
-            <!--<div id="add_books" class="tab-pane fade">-->
-            <!--    <form class="searchbox" id="searchForm" action="/addbook" method="post">-->
-            <!--        <input type="search" placeholder="Search Book by Name or Author" name="bookQuery" required />-->
-            <!--        <button type="submit" value="search">&nbsp;<i class="fa fa-plus fa-2x" aria-hidden="true"></i></button>-->
-            <!--    </form>-->
-            <!--</div>-->
+            
         </div>
     </div>
     <footer>

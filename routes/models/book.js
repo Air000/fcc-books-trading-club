@@ -6,16 +6,16 @@ var bcrypt   = require('bcrypt-nodejs');
 var bookSchema = mongoose.Schema({
     
     bookInfo    : {
-        volumeId    : String,
-        bookName    : String,
+        volumeId    : {type: String, required: true},
+        bookName    : {type: String, required: true},
         coverUrl    : String,
-        firstOwner  : String,
-        addOnDate   : Date,
+        firstOwner  : {type: String, required: true},
+        addOnDate   : {type: String, required: true},
         currentState    : {
-            preOwner    : String,
-            owner       : String,    // owner changed when trading approved
+            preOwner    : {type: String, default: "Google Books API"},
+            owner       : {type: String, required: true},    // owner changed when trading approved
             requestBy   : String,    //username, only can request by one user at one time
-            isOnTrading   : Boolean,
+            isOnTrading : {type: Boolean, default: false},
             requestTimeStamp: Date
             
         }
@@ -26,7 +26,7 @@ var bookSchema = mongoose.Schema({
         requestTimeStamp    : Date,
         requestByUser       : String,
         requestFromOwner    : String,
-        state               : String, //pending, approved, unapproved
+        state               : {type: String, enum: ['pending', 'approved', 'disapproved']}, //pending, approved, unapproved
         endTimeStamp        : Date    //aproved or unapproved timestamp
     }]
 });    
