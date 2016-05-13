@@ -2,8 +2,6 @@
 <html>
   <head>
     <% include partials/head %>
-    <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.4.8/angular.min.js"></script>
-    <script src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js"></script>
   </head>
   <script>
     var app = angular.module('allBooksApp', []);
@@ -40,7 +38,7 @@
     <header>
       <% include partials/header %>  
     </header>
-    <div class="container" ng-app="allBooksApp" ng-controller="allBooksCtrl">
+    <div class="container" ng-app="allBooksApp" ng-controller="allBooksCtrl" >
       <table class="table table-striped">
         <thead>
           <tr>
@@ -52,15 +50,16 @@
         </thead>
         <tbody>
           <tr ng-repeat="book in allBooks">
-            <td>{{$index}}</td>
+            <td>{{$index + 1}}</td>
             <td><img class="bookCover" ng-src="{{book.bookInfo.coverUrl}}"></img></td>
-            <td>{{book.bookInfo.bookName}}</td>
+            <td class="title">{{book.bookInfo.bookName}}</td>
             <td>{{book.bookInfo.currentState.owner}}</td>
             <td>
               <button class="btn" ng-class="{'btn-primary': !book.bookInfo.currentState.isOnTrading, 'btn-warning': book.bookInfo.currentState.isOnTrading}" ng-disabled="!requestable(book.bookInfo)" ng-click="sendRequest(book)">
                 {{book.bookInfo.currentState.isOnTrading?book.tradeRecords[book.tradeRecords.length - 1].state:"request"}}
               </button>
             </td>
+          </tr>  
         </tbody>  
       </table>  
     </div>  

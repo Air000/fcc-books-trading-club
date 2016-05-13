@@ -10,7 +10,7 @@ module.exports = function(passport) {
       Book.find({}, function(err, allBooks) {
           if(err)console.log(err);
           res.render('index', { user: req.user || null, allBooks: allBooks });
-      });    
+      }); 
     });
     
     router.get('/setting', isLoggedIn ,function(req, res) {
@@ -28,10 +28,20 @@ module.exports = function(passport) {
     });
     
     router.get('/books_manage', isLoggedIn, function(req, res) {
-        Book.find({'bookInfo.currentState.owner': req.user.twitter.username}, function(err, myBooks) {
-           if(err)console.log(err);
-           res.render('books_manage', {user: req.user, myBooks: myBooks});
-        });
+        // var myAllBooks = {};
+        // var myRequests = {};
+        // var requestsForMe = {};
+          
+        packedBooksForUser(req.user, function(err, packedData) {
+            if(err){
+                console.log(err);
+                res.status(400);
+                res.send("packedBooksForUser() failed!");
+            }else{
+               
+                res.render('books_manage', packedData);
+            }
+        });  
         
     });
     router.post('/update_setting', isLoggedIn, function(req, res) {
@@ -83,7 +93,7 @@ module.exports = function(passport) {
     });
     
     router.post('/requestBook', isLoggedIn, function(req, res){
-       console.log(req.body);
+    //   console.log(req.body);
        requestForBook(req.body, req.user, function(err, doc){
             if(err){
                 console.log(err);
@@ -96,6 +106,23 @@ module.exports = function(passport) {
            
        });
        
+    });
+    
+    router.post('/answerForRequest', isLoggedIn, function(req, res) {
+        answerForBook(req.body, req.user, function(err, doc) {
+           if(err) {
+               console.log("answerForBook err:", err);
+               res.status(400);
+               res.send("answer for book failed!");
+           } else {
+               packedBooksForUser(req.user, function(err, packedData) {
+                   if(err) console.log(err);
+                   
+                   res.send(packedData);
+               });
+               
+           }
+        });
     });
     // route for twitter authentication and login
     router.get('/auth/twitter', passport.authenticate('twitter'));
@@ -124,7 +151,7 @@ function isLoggedIn(req, res, next) {
 
     // if they aren't redirect them to the home page
     res.status(400);
-    res.send("Please login for booking!");
+    res.redirect('/auth/twitter');
     // res.redirect('/auth/twitter');
 }
 
@@ -157,4 +184,88 @@ function requestForBook(book, user, cb) {
         cb(err, newDoc);
         console.log(newDoc);
     });
+}
+
+function answerForBook(data, user, cb) {
+    var bookToUpdate = data.book;
+    var action  = data.action;
+    
+    console.log("answerForBook1", bookToUpdate, action);
+    
+    if(bookToUpdate.bookInfo.currentState.owner === user.twitter.username && 
+       bookToUpdate.bookInfo.currentState.isOnTrading) {
+        
+        if(action === "approve") {
+            bookToUpdate.bookInfo.currentState.preOwner = bookToUpdate.bookInfo.currentState.owner;
+            bookToUpdate.bookInfo.currentState.owner = bookToUpdate.bookInfo.currentState.requestBy;
+            bookToUpdate.bookInfo.currentState.isOnTrading = false;
+
+            bookToUpdate.tradeRecords[bookToUpdate.tradeRecords.length - 1].state = "approved";
+            bookToUpdate.tradeRecords[bookToUpdate.tradeRecords.length - 1].endTimeStamp = new Date();
+            Book.findOneAndUpdate({_id: bookToUpdate._id}, bookToUpdate,
+                {'new': true}, function(err, newDoc) {
+                    if(err) console.log(err);
+                    
+                    cb(err, newDoc);
+                    console.log(newDoc);
+                });
+        }else if(action === "disapprove") {
+            bookToUpdate.bookInfo.currentState.isOnTrading = false;
+
+            bookToUpdate.tradeRecords[bookToUpdate.tradeRecords.length - 1].state = "disapproved";
+            bookToUpdate.tradeRecords[bookToUpdate.tradeRecords.length - 1].endTimeStamp = new Date();
+            Book.findOneAndUpdate({_id: bookToUpdate._id}, bookToUpdate,
+                {'new': true}, function(err, newDoc) {
+                    if(err) console.log(err);
+                    
+                    cb(err, newDoc);
+                    console.log(newDoc);
+                });
+        }
+                    
+    } else {
+        console.log("Error permission!");
+        cb("Error permission!");
+    }
+    
+}
+
+function packedBooksForUser(user, cb) {
+    var myAllBooks = {};
+    var myRequests = {};
+    var requestsForMe = {};
+    
+    Book.find({'bookInfo.currentState.owner': user.twitter.username}, function(err, myBooks) {
+          if(err){ 
+              console.log(err);
+              cb(err); 
+          }else {
+              myAllBooks = myBooks;
+              Book.find({'tradeRecords.requestByUser': user.twitter.username}, function(err, myReq) {
+                  if(err){ 
+                      console.log(err);
+                      cb(err);  
+                  }else {
+                    myRequests = myReq;
+                  
+                    Book.find({'tradeRecords.requestFromOwner': user.twitter.username}, function(err, reqForMe) {
+                        if(err){ 
+                          console.log(err);
+                          cb(err);   
+                        }else {
+                            requestsForMe = reqForMe;
+                            // console.log("mybooks" , myAllBooks.length, JSON.stringify(myAllBooks) );
+                            // console.log("myRequests", myRequests.length, JSON.stringify(myRequests) );
+                            // console.log("requestForMe", requestsForMe.length, JSON.stringify(requestsForMe) );
+                            cb(err, {user: user, 
+                                    myBooks: myAllBooks, 
+                                    myRequests: myRequests,
+                                    requestsForMe: requestsForMe
+                            });
+                        }
+                    })  
+                  }
+              })
+          }
+        });
 }

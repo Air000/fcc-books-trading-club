@@ -2,14 +2,65 @@
 <html>
   <head>
     <% include partials/head %>
-    <script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.4.8/angular.min.js"></script>
- 
   </head>
   <script>
     var app = angular.module('bookManageApp', []);
 
-    app.controller('bookManageCtrl', function($scope) {
+    app.controller('bookManageCtrl', function($scope, $http) {
+        $scope.user = <%-JSON.stringify(user) %>
         $scope.myBooks = <%-JSON.stringify(myBooks)%>;
+        $scope.myRequests = <%-JSON.stringify(myRequests) %>;
+        $scope.requestsForMe = <%-JSON.stringify(requestsForMe) %>;
+        
+        $scope.myLastRequestStatus = function(book) {
+            var requestStatus = book.tradeRecords.filter(function(record) {
+                return record.requestByUser === $scope.user.twitter.username;
+            }).sort(function(r1, r2) {
+                return new Date(r2.requestTimeStamp) - new Date(r1.requestTimeStamp);
+            })[0].state;
+            
+            // console.log("requestStatus", requestStatus);
+            return requestStatus;
+        };
+        
+        $scope.myLastAnswerStatus = function(book) {
+            var answerStatus = book.tradeRecords.filter(function(record) {
+                return record.requestFromOwner === $scope.user.twitter.username;
+            }).sort(function(r1, r2) {
+                return new Date(r2.requestTimeStamp) - new Date(r1.requestTimeStamp);
+            })[0].state;
+            
+            // console.log("answerStatus", answerStatus);
+            return answerStatus;
+        };
+        
+        $scope.myLastRequestFrom = function(book) {
+          var lastRequestFrom = book.tradeRecords.filter(function(record) {
+              return record.requestByUser === $scope.user.twitter.username;
+          }).sort(function(r1, r2) {
+              return new Date(r2.requestTimeStamp) - new Date(r1.requestTimeStamp);
+          })[0].requestFromOwner;
+          
+          return lastRequestFrom;
+        };
+        $scope.sendAnswer = function(book, action) {
+            $("#wait").show();
+            $http({
+                method: 'POST',
+                url:    '/answerForRequest',
+                data:   {book: book, action: action}
+            }).then(function success(res) {
+                //update array: $scope.myBooks and $scope.requestsForMe
+                // console.log(res.data);
+              $scope.myBooks = res.data.myBooks;
+              $scope.requestsForMe = res.data.requestsForMe;
+               
+            }, function error(err) {
+                alert(err.responseText);
+            }).finally(function() {
+                $("#wait").hide();
+            });
+        };
     });
 
     $(document).ready(function() {
@@ -22,7 +73,6 @@
         });
         
         var myBooks = <%-JSON.stringify(myBooks)%>;
-        console.log(myBooks);
 
         $("#searchForm").submit(function(ev) {
            ev.preventDefault();
@@ -32,8 +82,7 @@
                url: $("#searchForm").attr("action"),
                data: $("#searchForm").serialize(),
                success: function(data) {
-                   console.log(JSON.stringify(data));
-                //   alert("Add <<" + data.bookInfo.bookName + ">> success!");
+                //   console.log(JSON.stringify(data));
                    var scope = angular.element($("#my_all_books")).scope();
                     scope.$apply(function(){
                         scope.myBooks.push(data);
@@ -64,7 +113,7 @@
                     <input type="search" placeholder="Search Book by Name or Author" name="bookQuery" required />
                     <button type="submit" value="search">&nbsp;<i class="fa fa-plus fa-2x" aria-hidden="true"></i></button>
                 </form>
-                <div class="sctrollable-div">
+                <div>
                     <table class="table table-striped">
                         <thead>
                             <tr>
@@ -76,9 +125,9 @@
                         </thead>
                         <tbody>
                             <tr ng-repeat="book in myBooks">
-                                <td>{{$index}}</td>
+                                <td>{{$index + 1}}</td>
                                 <td><img class="bookCover" ng-src="{{book.bookInfo.coverUrl}}"></img></td>
-                                <td>{{book.bookInfo.bookName}}</td>
+                                <td class="title">{{book.bookInfo.bookName}}</td>
                                 <td>{{book.bookInfo.currentState.preOwner}}</td>
                             </tr>    
                         </tbody>        
@@ -86,12 +135,71 @@
                 </div>    
             </div>
             <div id="my_requests" class="tab-pane fade">
-                <h3>My Requests</h3>
-                <p>Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+                <div>
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>No.</th>
+                                <th>Image</th>
+                                <th>Title</th>
+                                <th>Request from</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr ng-repeat="book in myRequests" >
+                                <td>{{$index + 1}}</td>
+                                <td><img class="bookCover" ng-src="{{book.bookInfo.coverUrl}}"></img></td>
+                                <td class="title">{{book.bookInfo.bookName}}</td>
+                                <td>{{myLastRequestFrom(book)}}</td>
+                                <td ng-class="{'bg-color-red': myLastRequestStatus(book) == 'disapproved', 
+                                'bg-color-green': myLastRequestStatus(book) == 'approved',
+                                'bg-color-gold': myLastRequestStatus(book) == 'pending'}">
+                                    {{myLastRequestStatus(book)}}
+                                </td>
+                            </tr>    
+                        </tbody>            
+                    </table>    
+                </div>    
             </div>
             <div id="requests_for_me" class="tab-pane fade">
-                <h3>Requests for Me</h3>
-                <p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam.</p>
+                <div>
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>No.</th>
+                                <th>Image</th>
+                                <th>Title</th>
+                                <th>Request User</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr ng-repeat="book in requestsForMe">
+                                <td>{{$index + 1}}</td>
+                                <td><img class="bookCover" ng-src="{{book.bookInfo.coverUrl}}"></img></td>
+                                <td class="title">{{book.bookInfo.bookName}}</td>
+                                <td>{{book.bookInfo.currentState.requestBy}}</td>
+                                <td class="" ng-class="{'bg-color-red': myLastAnswerStatus(book) == 'disapproved', 
+                                    'bg-color-green': myLastAnswerStatus(book) == 'approved', 
+                                    'bg-color-gold': myLastAnswerStatus(book) == 'pending'}">
+                                    {{myLastAnswerStatus(book)}}
+                                </td>  
+                                <td>
+                                    <div class="action-btn btn btn-success" ng-click="sendAnswer(book, 'approve')" 
+                                        ng-disabled="{{!(book.bookInfo.currentState.isOnTrading && book.bookInfo.currentState.owner === user.twitter.username)}}">
+                                        Approve
+                                    </div>
+                                    </br>
+                                    <div class="action-btn btn btn-danger" ng-click="sendAnswer(book, 'disapprove')" 
+                                        ng-disabled="{{!(book.bookInfo.currentState.isOnTrading && book.bookInfo.currentState.owner === user.twitter.username)}}">
+                                        Disapprove
+                                    </div>
+                                </td>
+                            </tr>    
+                        </tbody>        
+                    </table>    
+                </div>    
             </div>
             
         </div>

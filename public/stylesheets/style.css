@@ -1,15 +1,58 @@
 body {
   padding: 50px;
   /*font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;*/
+  font-family: "Trebuchet MS", Helvetica, sans-serif;
   /*text-align: center;*/
 }
 
+.right {
+    float: right;
+    margin-right: 50px;
+}
+
+.navbar-nav > li, .navbar-header{
+  margin: 5px 20px;
+}
+
+.bg-color-red {
+  background-color: #fdcde3; 
+  font-weight: bold;
+}
+
+.bg-color-green {
+  background-color: #baf0b9;  
+  font-weight: bold;
+}
+
+.bg-color-gold {
+    background-color: #fff68f;
+    font-weight: bold;
+}
+
+td {
+	vertical-align: middle;    
+}
+
+th{
+    text-align: center;    
+}
+
+.title {
+    /*font-weight: bold;*/
+    font-family: Impact, Charcoal, sans-serif;
+}
+.collapse {
+    height: 100px;
+}
 .container {
-    /*width: 100%;*/
     margin: 50px;
     margin-left: 200px;
     width: 800px;
-    /*text-align: center;*/
+}
+
+.action-btn {
+    margin: 5px;
+    width: 100px;
 }
 
 .bookCover {
