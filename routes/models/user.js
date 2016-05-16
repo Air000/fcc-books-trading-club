@@ -16,18 +16,6 @@ var userSchema = mongoose.Schema({
         fullName     : String,
         city         : String,
         state        : String
-    },
-    
-    myBookManege     : {
-        myRequest    : [{
-            volumeId : String,
-            state    : {type: String, enum: ['pending', 'approved', 'disapproved']}
-        }],
-        
-        requestForMe : [{
-            volumeId : String,
-            state    : {type: String, enum: ['pending', 'approved', 'disapproved']}
-        }]
     }
     
 
